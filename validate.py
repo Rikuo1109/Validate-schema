@@ -187,6 +187,65 @@ class Email(Validator):
         return value
 
 
+class Password(Validator):
+
+    HAS_ONLY_NUMBER_PATTERN = '^[0-9]*'
+    UPPERCASE_PATTERN = '[A-Z]'
+    SPECIAL_CHARACTERS = r'[.@_!#$%^&*()<>?/\|}{~:]'
+
+    def __init__(self, *, length_min=8, contain_number: bool = True, cotain_uppercase: bool = False, contain_special: bool = False):
+        self.cotain_number = contain_number
+        self.cotain_uppercase = cotain_uppercase
+        self.cotain_special = contain_special
+        self.length_min = length_min
+
+    @classmethod
+    def has_only_number(cls, input):
+        return re.match(cls.HAS_ONLY_NUMBER_PATTERN, input)
+
+    @classmethod
+    def has_number(cls, input):
+        return any(letter.isnumeric() or letter.isdigit() for letter in input)
+
+    @classmethod
+    def has_uppercase_character(cls, input):
+        return bool(re.match(cls.UPPERCASE_PATTERN, input))
+
+    @classmethod
+    def has_special_character(cls, input):
+        regex = re.compile(cls.SPECIAL_CHARACTERS)
+        if (regex.search(input)):
+            return True
+        return False
+
+    def __call__(self, value: str, name: str) -> str:
+
+        errors = []
+        value = str(value)
+
+        if len(value) < self.length_min:
+            errors.append(f'Field {name} is too short')
+
+        if self.has_only_number(value):
+            errors.append(f'Field {name} entirely numeric')
+
+        if self.cotain_number and (not self.has_number(value)):
+            errors.append(f'Field {name} must contain number')
+
+        if self.cotain_uppercase and (not self.has_uppercase_character(value)):
+            errors.append(f'Field {name} must contain uppercase characters')
+
+        if self.cotain_special and (not self.has_special_character(value)):
+            errors.append(
+                f'Field {name} must contain special characters'
+            )
+
+        if errors:
+            raise ValidationError(detail=errors)
+
+        return value
+
+
 class Range(Validator):
     """Validator which succeeds if the value passed to it is within the specified
     range. If ``min`` is not specified, or is specified as `None`,

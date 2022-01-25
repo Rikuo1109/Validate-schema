@@ -443,3 +443,10 @@ class Email(String):
         # Insert validation into self.validators so that multiple errors can be stored.
         validator = validate.Email()
         self.validators.insert(0, validator)
+
+
+class Password(String):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        validator = validate.Password()
+        self.validators.insert(0, validator)
