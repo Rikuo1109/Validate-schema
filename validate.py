@@ -281,10 +281,10 @@ class Length(Validator):
         Can be interpolated with `{input}`, `{min}` and `{max}`.
     """
 
-    message_min = "Shorter than minimum length {min}."
-    message_max = "Longer than maximum length {max}."
-    message_all = "Length must be between {min} and {max}."
-    message_equal = "Length must be {equal}."
+    message_min = "Field {name} must be shorter than minimum length {min}."
+    message_max = "Field {name} must be longer than maximum length {max}."
+    message_all = "Field {name}'s length must be between {min} and {max}."
+    message_equal = "Field {name}'s length must be {equal}."
 
     def __init__(
         self,
@@ -305,28 +305,32 @@ class Length(Validator):
         self.error = error
         self.equal = equal
 
-    def _format_error(self, value: typing.Sized, message: str) -> str:
+    def _format_error(self, value: typing.Sized, name: str, message: str) -> str:
         return (self.error or message).format(
-            input=value, min=self.min, max=self.max, equal=self.equal
+            input=value, min=self.min, max=self.max, equal=self.equal, name=name
         )
 
-    def __call__(self, value: typing.Sized) -> typing.Sized:
+    def __call__(self, value: typing.Sized, name: str) -> typing.Sized:
         length = len(value)
 
         if self.equal is not None:
             if length != self.equal:
                 raise ValidationError(
-                    detail=self._format_error(value, self.message_equal)
+                    detail=self._format_error(value, name, self.message_equal)
                 )
             return value
 
         if self.min is not None and length < self.min:
             message = self.message_min if self.max is None else self.message_all
-            raise ValidationError(detail=self._format_error(value, message))
+            raise ValidationError(
+                detail=self._format_error(value, name, message)
+            )
 
         if self.max is not None and length > self.max:
             message = self.message_max if self.min is None else self.message_all
-            raise ValidationError(detail=self._format_error(value, message))
+            raise ValidationError(
+                detail=self._format_error(value, name, message)
+            )
 
         return value
 
@@ -377,6 +381,7 @@ class Regexp(Validator):
             raise ValidationError(detail=self._format_error(value))
 
         return value
+
 
 class NoneOf(Validator):
     """Validator which fails if ``value`` is a member of ``iterable``.
@@ -433,13 +438,13 @@ class OneOf(Validator):
     def _format_error(self, value, name) -> str:
         return f'Field {name} must be one of: {self.choices_text}'
 
-
-    def __call__(self, value: typing.Any, name:str) -> typing.Any:
+    def __call__(self, value: typing.Any, name: str) -> typing.Any:
         try:
             if value not in self.choices:
                 raise ValidationError(detail=self._format_error(value, name))
         except TypeError as error:
-            raise ValidationError(detail=self._format_error(value, name)) from error
+            raise ValidationError(
+                detail=self._format_error(value, name)) from error
 
         return value
 
@@ -462,51 +467,3 @@ class OneOf(Validator):
         pairs = zip_longest(self.choices, self.labels, fillvalue="")
 
         return ((valuegetter(choice), label) for choice, label in pairs)
-
-
-class ContainsOnly(OneOf):
-    """Validator which succeeds if ``value`` is a sequence and each element
-    in the sequence is also in the sequence passed as ``choices``. Empty input
-    is considered valid.
-
-    :param iterable choices: Same as :class:`OneOf`.
-    :param iterable labels: Same as :class:`OneOf`.
-    :param str error: Same as :class:`OneOf`.
-    """
-
-    default_message = "One or more of the choices you made was not in: {choices}."
-
-    def _format_error(self, value) -> str:
-        value_text = ", ".join(str(val) for val in value)
-        return super()._format_error(value_text)
-
-    def __call__(self, value: typing.Sequence[_T]) -> typing.Sequence[_T]:
-        # We can't use set.issubset because does not handle unhashable types
-        for val in value:
-            if val not in self.choices:
-                raise ValidationError(detail=self._format_error(value))
-        return value
-
-
-class ContainsNoneOf(NoneOf):
-    """Validator which fails if ``value`` is a sequence and any element
-    in the sequence is a member of the sequence passed as ``iterable``. Empty input
-    is considered valid.
-
-    :param iterable iterable: Same as :class:`NoneOf`.
-    :param str error: Same as :class:`NoneOf`.
-
-    .. versionadded:: 3.6.0
-    """
-
-    default_message = "One or more of the choices you made was in: {values}."
-
-    def _format_error(self, value) -> str:
-        value_text = ", ".join(str(val) for val in value)
-        return super()._format_error(value_text)
-
-    def __call__(self, value: typing.Sequence[_T]) -> typing.Sequence[_T]:
-        for val in value:
-            if val in self.iterable:
-                raise ValidationError(detail=self._format_error(value))
-        return value
