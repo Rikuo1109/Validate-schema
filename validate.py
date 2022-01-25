@@ -378,38 +378,6 @@ class Regexp(Validator):
 
         return value
 
-
-class Predicate(Validator):
-    """Call the specified ``method`` of the ``value`` object. The
-    validator succeeds if the invoked method returns an object that
-    evaluates to True in a Boolean context. Any additional keyword
-    argument will be passed to the method.
-
-    :param method: The name of the method to invoke.
-    :param error: Error message to raise in case of a validation error.
-        Can be interpolated with `{input}` and `{method}`.
-    :param kwargs: Additional keyword arguments to pass to the method.
-    """
-
-    default_message = "Invalid input."
-
-    def __init__(self, method: str, *, error: str | None = None, **kwargs):
-        self.method = method
-        self.error = error or self.default_message  # type: str
-        self.kwargs = kwargs
-
-    def _format_error(self, value: typing.Any) -> str:
-        return self.error.format(input=value, method=self.method)
-
-    def __call__(self, value: typing.Any) -> typing.Any:
-        method = getattr(value, self.method)
-
-        if not method(**self.kwargs):
-            raise ValidationError(detail=self._format_error(value))
-
-        return value
-
-
 class NoneOf(Validator):
     """Validator which fails if ``value`` is a member of ``iterable``.
 
@@ -428,7 +396,7 @@ class NoneOf(Validator):
     def _format_error(self, value) -> str:
         return self.error.format(input=value, values=self.values_text)
 
-    def __call__(self, value: typing.Any) -> typing.Any:
+    def __call__(self, value: typing.Any, name: str) -> typing.Any:
         try:
             if value in self.iterable:
                 raise ValidationError(detail=self._format_error(value))
@@ -462,17 +430,16 @@ class OneOf(Validator):
         self.labels_text = ", ".join(str(label) for label in self.labels)
         self.error = error or self.default_message  # type: str
 
-    def _format_error(self, value) -> str:
-        return self.error.format(
-            input=value, choices=self.choices_text, labels=self.labels_text
-        )
+    def _format_error(self, value, name) -> str:
+        return f'Field {name} must be one of: {self.choices_text}'
 
-    def __call__(self, value: typing.Any) -> typing.Any:
+
+    def __call__(self, value: typing.Any, name:str) -> typing.Any:
         try:
             if value not in self.choices:
-                raise ValidationError(detail=self._format_error(value))
+                raise ValidationError(detail=self._format_error(value, name))
         except TypeError as error:
-            raise ValidationError(detail=self._format_error(value)) from error
+            raise ValidationError(detail=self._format_error(value, name)) from error
 
         return value
 
