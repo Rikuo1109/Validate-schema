@@ -246,6 +246,19 @@ class Password(Validator):
         return value
 
 
+class OneOfEnum(Validator):
+    def __init__(self, *, enum_class):
+        self.enum_class = enum_class
+
+    def __call__(self, value: str, name: str) -> str | None:
+        value = value.upper()
+
+        if value in [v for v in self.enum_class.__members__.keys()]:
+            return self.enum_class[value]
+        elif value in [v.value for v in self.enum_class.__members__.values()]:
+            return value
+
+
 class Range(Validator):
     """Validator which succeeds if the value passed to it is within the specified
     range. If ``min`` is not specified, or is specified as `None`,
@@ -479,20 +492,15 @@ class OneOf(Validator):
         interpolated with `{input}`, `{choices}` and `{labels}`.
     """
 
-    default_message = "Must be one of: {choices}."
-
     def __init__(
         self,
         choices: typing.Iterable,
         labels: typing.Iterable[str] | None = None,
-        *,
-        error: str | None = None,
     ):
         self.choices = choices
         self.choices_text = ", ".join(str(choice) for choice in self.choices)
         self.labels = labels if labels is not None else []
         self.labels_text = ", ".join(str(label) for label in self.labels)
-        self.error = error or self.default_message  # type: str
 
     def _format_error(self, value, name) -> str:
         return f'Field {name} must be one of: {self.choices_text}'
