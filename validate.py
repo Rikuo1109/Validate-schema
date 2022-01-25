@@ -189,7 +189,6 @@ class Email(Validator):
 
 class Password(Validator):
 
-    HAS_ONLY_NUMBER_PATTERN = '^[0-9]*'
     UPPERCASE_PATTERN = '[A-Z]'
     SPECIAL_CHARACTERS = r'[.@_!#$%^&*()<>?/\|}{~:]'
 
@@ -201,7 +200,7 @@ class Password(Validator):
 
     @classmethod
     def has_only_number(cls, input):
-        return re.match(cls.HAS_ONLY_NUMBER_PATTERN, input)
+        return input.isdecimal()
 
     @classmethod
     def has_number(cls, input):
