@@ -1,0 +1,16 @@
+# Environments
+.vscode
+venv
+.DS_Store
+/resources
+/ems_api/resources
+
+### Django ###
+*.log
+*.pot
+*.pyc
+__pycache__/
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media
