@@ -252,10 +252,15 @@ class OneOfEnum(Validator):
     def __call__(self, value: str, name: str) -> str | None:
         value = value.upper()
 
-        if value in [v for v in self.enum_class.__members__.keys()]:
+        keys = [v for v in self.enum_class.__members__.keys()]
+        if value in keys:
             return self.enum_class[value]
         elif value in [v.value for v in self.enum_class.__members__.values()]:
             return value
+        else:
+            raise ValidationError(
+                detail=f'Field {name} must be one of: {keys}'
+            )
 
 
 class Range(Validator):
