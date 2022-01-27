@@ -426,7 +426,7 @@ class Regexp(Validator):
         Can be interpolated with `{input}` and `{regex}`.
     """
 
-    default_message = "String does not match expected pattern."
+    default_message = "Field {name} does not match expected pattern."
 
     def __init__(
         self,
@@ -441,20 +441,20 @@ class Regexp(Validator):
         )
         self.error = error or self.default_message  # type: str
 
-    def _format_error(self, value: str | bytes) -> str:
-        return self.error.format(input=value, regex=self.regex.pattern)
+    def _format_error(self, value: str | bytes, name: str) -> str:
+        return self.error.format(input=value, regex=self.regex.pattern, name=name)
 
     @typing.overload
-    def __call__(self, value: str) -> str:
+    def __call__(self, value: str, name: str) -> str:
         ...
 
     @typing.overload
-    def __call__(self, value: bytes) -> bytes:
+    def __call__(self, value: bytes, name: str) -> bytes:
         ...
 
-    def __call__(self, value):
+    def __call__(self, value, name: str):
         if self.regex.match(value) is None:
-            raise ValidationError(detail=self._format_error(value))
+            raise ValidationError(detail=self._format_error(value, name))
 
         return value
 
