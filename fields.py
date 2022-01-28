@@ -255,13 +255,21 @@ class String(Field):
     :param kwargs: The same keyword arguments that :class:`Field` receives.
     """
 
+    def __init__(self, *, upper_case: bool | None = False, **kwargs):
+        super().__init__(**kwargs)
+        self.upper_case = upper_case
+
     def _deserialize(self, value, attr, data, **kwargs) -> typing.Any:
         if not isinstance(value, (str, bytes)):
             raise ValidationError(
                 detail=f'Except field {self.name} is a string'
             )
         try:
-            return utils.ensure_text_type(value)
+            value = utils.ensure_text_type(value)
+            if (self.upper_case):
+                value = value.upper()
+            return value
+
         except UnicodeDecodeError:
             raise ValidationError(
                 detail=f'Field {self.name} has some invalid characters'
