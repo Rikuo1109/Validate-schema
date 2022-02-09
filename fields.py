@@ -102,7 +102,7 @@ class Field(FieldABC):
         """Validate missing values. Raise a :exc:`ValidationError` if
         `value` should be considered missing.
         """
-        if ((value is missing_) or (value == '')) and self.required:
+        if ((value is missing_) or (value == '') or (value is None)) and self.required:
             if self.load_default:
                 return
             raise ParseError(
@@ -124,7 +124,7 @@ class Field(FieldABC):
         :param kwargs: Field-specific keyword arguments.
 `       """
         self._validate_missing(value)
-        if value is missing_:
+        if ((value is missing_) or (value == '') or (value is None)):
             _miss = self.load_default
             return _miss() if callable(_miss) else _miss
         output = self._deserialize(value, attr, data, **kwargs)
