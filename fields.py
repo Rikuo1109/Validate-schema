@@ -124,11 +124,7 @@ class Field(FieldABC):
         :param kwargs: Field-specific keyword arguments.
 `       """
         self._validate_missing(value)
-<<<<<<< HEAD
         if ((value is missing_) or (value == '') or (value is None)):
-=======
-        if ((value is missing_) or (value == '')):
->>>>>>> 74e3d0c73480f0e3d89a40b1b33e4a7e5082dc7c
             _miss = self.load_default
             return _miss() if callable(_miss) else _miss
         output = self._deserialize(value, attr, data, **kwargs)
