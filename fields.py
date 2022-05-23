@@ -331,6 +331,13 @@ class Integer(Float):
             value, numbers.Integral
         ):
             return super()._validated(value)
+        elif isinstance(value, str):
+            try:
+                return int(value)
+            except ValueError:
+                raise ValidationError(
+                    detail=f'Except field {self.name} is an integer'
+                )
         raise ValidationError(
             detail=f'Field {self.name} must be a valid integer'
         )
