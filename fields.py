@@ -102,7 +102,7 @@ class Field(FieldABC):
         """Validate missing values. Raise a :exc:`ValidationError` if
         `value` should be considered missing.
         """
-        if ((value is missing_) or (value == '') or (value is None)) and self.required:
+        if ((value is missing_) or (value is None)) and self.required:
             if self.load_default:
                 return
             raise ParseError(
