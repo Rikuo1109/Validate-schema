@@ -276,6 +276,62 @@ class String(Field):
             )
 
 
+class ListString(String):
+    """A string of list field, split by comma (',').
+    Composed with another `Field` class or instance.
+
+    Example: ::
+        numbers = fields.List(fields.Float())
+
+    :param cls_or_instance: A field class or instance.
+    :param kwargs: The same keyword arguments that :class:`Field` receives.
+    """
+
+    def __init__(self, cls_or_instance: Field | type, **kwargs):
+        super().__init__(**kwargs)
+        self.inner = resolve_field_instance(cls_or_instance)
+
+    def _bind_to_schema(self, field_name, schema):
+        super()._bind_to_schema(field_name, schema)
+        self.inner = copy.deepcopy(self.inner)
+        self.inner._bind_to_schema(field_name, self)
+
+    @staticmethod
+    def split_input_list(str_list: str):
+        """
+        Separate out individual input string from the comma, or space separated string.
+
+        e.g.
+        in: "Lorem@ipsum.dolor, sit@amet.consectetur\nadipiscing@elit.Aenean\r convallis@at.lacus\r, ut@lacinia.Sed"
+        out: ['Lorem@ipsum.dolor', 'sit@amet.consectetur', 'adipiscing@elit.Aenean', 'convallis@at.lacus', 'ut@lacinia.Sed']
+
+        `str_list` is a string coming from an input text area
+        returns a list of separated values
+        """
+        import re
+
+        new_list = re.split(r'[\n\r\s,]', str_list)
+        new_list = [s.strip() for s in new_list]
+        new_list = [s for s in new_list if s != '']
+
+        return new_list
+
+    def _deserialize(self, value, attr, data, **kwargs) -> list[typing.Any]:
+        value = super()._deserialize(value, attr, data, **kwargs)
+
+        value = self.split_input_list(value)
+        result = []
+
+        for idx, each in enumerate(value):
+            try:
+                result.append(self.inner.deserialize(each, **kwargs))
+            except ValidationError as error:
+                raise ValidationError(
+                    detail=f'Field {self.name}[{idx + 1}]: {error.detail[0]}'
+                ) from error
+        return result
+
+
 class UUID(String):
     def _validated(self, value) -> uuid.UUID | None:
         if value is None:
